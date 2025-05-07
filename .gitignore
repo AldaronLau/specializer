@@ -2,3 +2,8 @@ target/
 build/
 *.swp
 *.rs.bk
+
+
+# Added by cargo
+
+/target
