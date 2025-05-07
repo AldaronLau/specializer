@@ -72,6 +72,17 @@ where
 /// Attempt to cast `T` to `U`.
 ///
 /// Returns `None` if they are not the same type.
+///
+/// ```rust
+/// fn only_string<T: 'static>(t: T) -> Option<String> {
+///     specializer::cast_identity::<T, String>(t)
+/// }
+///
+/// assert!(only_string(()).is_none());
+/// assert!(only_string(1).is_none());
+/// assert!(only_string("Hello").is_none());
+/// assert_eq!(only_string("Hello".to_string()).as_deref(), Some("Hello"));
+/// ```
 pub fn cast_identity<T, U>(ty: T) -> Option<U>
 where
     T: 'static,
