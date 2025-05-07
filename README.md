@@ -1,2 +1,3 @@
-# library-template
-Template for library repositories 
+# Specializer
+ 
+Safe specialization on stable Rust with builder-like pattern 
