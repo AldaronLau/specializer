@@ -1,4 +1,28 @@
 //! Safe specialization on stable Rust with builder-like pattern
+//!
+//! # Getting Started
+//!
+//! For the simplest example see [`Specializer::specialize_param()`].
+//!
+//! The other types may be required depending on your use case:
+//!
+//! | Async | Takes    | Returns  | Type                               |
+//! |-------|----------|----------|------------------------------------|
+//! | False | Owned    | Owned    | [`Specializer`]                    |
+//! | False | Owned    | Borrowed | `SpecializerBorrowedReturn`        |
+//! | False | Borrowed | Owned    | `SpecializerBorrowedParam`         |
+//! | False | Borrowed | Borrowed | `SpecializerBorrowed`              |
+//! | True  | Owned    | Owned    | `AsyncSpecializer`                 |
+//! | True  | Owned    | Borrowed | `AsyncSpecializerBorrowedReturn`   |
+//! | True  | Borrowed | Owned    | `AsyncSpecializerBorrowedParam`    |
+//! | True  | Borrowed | Borrowed | `AsyncSpecializerBorrowed`         |
+//!
+//! ## Borrowing
+//!
+//! You can specialize on borrowed types using the `*SpecializerBorrowed*`
+//! specializers as long as the borrowed types implement
+//! [`CastIdentityBorrowed`], which is automatically implemented for `&T` and
+//! `&mut T`, `where T: 'static`.
 
 #![doc(
     html_logo_url = "https://ardaku.github.io/mm/logo.svg",
@@ -39,9 +63,9 @@ use core::{
     marker::PhantomData,
 };
 
-/// Specialized behavior runner
+/// Specialized behavior runner (Owned -> Owned)
 #[derive(Debug)]
-pub struct Specializer<T, U, F>(F, PhantomData<fn(T) -> U>);
+pub struct Specializer<T, U, F>(T, F, PhantomData<fn(T) -> U>);
 
 impl<T, U, F> Specializer<T, U, F>
 where
@@ -51,11 +75,30 @@ where
 {
     /// Create a new specializer with a fallback function.
     #[inline(always)]
-    pub const fn new_fallback(f: F) -> Self {
-        Self(f, PhantomData)
+    pub const fn new(params: T, f: F) -> Self {
+        Self(params, f, PhantomData)
     }
 
     /// Specialize on the parameter and the return type of the closure.
+    ///
+    /// ```rust
+    /// use specializer::Specializer;
+    ///
+    /// fn specialized<T, U>(ty: T) -> U
+    /// where
+    ///     T: 'static,
+    ///     U: 'static + From<T> + From<u8>,
+    /// {
+    ///     Specializer::new(ty, From::from)
+    ///         .specialize(|int: i32| -> i32 { int * 2 })
+    ///         .specialize_param(|int: u8| { U::from(int * 3) })
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i16, i32>(3), 3);
+    /// assert_eq!(specialized::<i32, i32>(3), 6);
+    /// assert_eq!(specialized::<u8, i32>(3), 9);
+    /// ```
     #[inline]
     pub fn specialize<P, R>(
         self,
@@ -65,7 +108,7 @@ where
         P: 'static,
         R: 'static,
     {
-        let Specializer(fallback, phantom_data) = self;
+        let Specializer(ty, fallback, phantom_data) = self;
         let f = |t: T| -> U {
             if TypeId::of::<T>() == TypeId::of::<P>()
                 && TypeId::of::<U>() == TypeId::of::<R>()
@@ -78,7 +121,7 @@ where
             fallback(t)
         };
 
-        Specializer(f, phantom_data)
+        Specializer(ty, f, phantom_data)
     }
 
     /// Specialize on the parameter of the closure.
@@ -90,10 +133,12 @@ where
     /// where
     ///     T: 'static
     /// {
-    ///     Specializer::new_fallback(|_| "unknown".to_owned())
+    ///     let fallback = |_| "unknown".to_owned();
+    ///
+    ///     Specializer::new(ty, fallback)
     ///         .specialize_param(|int: i32| (int * 2).to_string())
     ///         .specialize_param(|string: String| string)
-    ///         .run(ty)
+    ///         .run()
     /// }
     ///
     /// assert_eq!(specialized(3), "6");
@@ -120,10 +165,12 @@ where
     /// where
     ///     T: 'static + Default
     /// {
-    ///     Specializer::new_fallback(|_: i32| -> T { Default::default() })
+    ///     let fallback = |_| -> T { Default::default() };
+    ///
+    ///     Specializer::new(int, fallback)
     ///         .specialize_return(|int| -> i32 { int * 2 })
     ///         .specialize_return(|int| -> String { int.to_string() })
-    ///         .run(int)
+    ///         .run()
     /// }
     ///
     /// assert_eq!(specialized::<i32>(3), 6);
@@ -143,8 +190,8 @@ where
 
     /// Run the specializer.
     #[inline]
-    pub fn run(self, ty: T) -> U {
-        (self.0)(ty)
+    pub fn run(self) -> U {
+        (self.1)(self.0)
     }
 }
 
@@ -258,7 +305,7 @@ where
     T::cast_identity(ty)
 }
 
-/// Trait for specializing on borrowed types.
+/// Identity cast on a borrowed type
 ///
 /// ```rust
 /// use specializer::CastIdentityBorrowed;

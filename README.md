@@ -16,8 +16,7 @@ Check out the [documentation] for examples.
 ### Features
 
  - Functions to do a fallible cast to/from generics/concrete types
- - Supports casting with `'static` types and `&T` and `&mut T` types
-   `where T: 'static`
+ - Supports casting with `'static` types and borrowed types
  - Sync/async builders for chaining type specialization
  - No-std/no-alloc
  - No unsafe
