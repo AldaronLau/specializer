@@ -10,7 +10,7 @@ documentation = "https://docs.rs/specializer"
 homepage = "https://github.com/AldaronLau/specializer/releases"
 repository = "https://github.com/AldaronLau/specializer"
 readme = "README.md"
-keywords = ["specialization", "specialize", "generics"]
+keywords = ["specialization", "specialize", "generics", "cast", "identity"]
 categories = ["asynchronous", "no-std", "no-std::no-alloc", "rust-patterns"]
 include = [
     "/LICENSE_APACHE",
