@@ -50,11 +50,13 @@ where
     U: 'static,
 {
     /// Create a new specializer with a fallback function.
+    #[inline(always)]
     pub const fn new_fallback(f: F) -> Self {
         Self(f, PhantomData)
     }
 
     /// Specialize on the parameter and the return type of the closure.
+    #[inline]
     pub fn specialize<P, R>(
         self,
         f: impl FnOnce(P) -> R,
@@ -80,6 +82,25 @@ where
     }
 
     /// Specialize on the parameter of the closure.
+    ///
+    /// ```rust
+    /// use specializer::Specializer;
+    ///
+    /// fn specialized<T>(ty: T) -> String
+    /// where
+    ///     T: 'static
+    /// {
+    ///     Specializer::new_fallback(|_| "unknown".to_owned())
+    ///         .specialize_param(|int: i32| (int * 2).to_string())
+    ///         .specialize_param(|string: String| string)
+    ///         .run(ty)
+    /// }
+    ///
+    /// assert_eq!(specialized(3), "6");
+    /// assert_eq!(specialized("Hello world".to_string()), "Hello world");
+    /// assert_eq!(specialized(()), "unknown");
+    /// ```
+    #[inline]
     pub fn specialize_param<P>(
         self,
         f: impl FnOnce(P) -> U,
@@ -91,6 +112,25 @@ where
     }
 
     /// Specialize on the return type of the closure.
+    ///
+    /// ```rust
+    /// use specializer::Specializer;
+    ///
+    /// fn specialized<T>(int: i32) -> T
+    /// where
+    ///     T: 'static + Default
+    /// {
+    ///     Specializer::new_fallback(|_: i32| -> T { Default::default() })
+    ///         .specialize_return(|int| -> i32 { int * 2 })
+    ///         .specialize_return(|int| -> String { int.to_string() })
+    ///         .run(int)
+    /// }
+    ///
+    /// assert_eq!(specialized::<i32>(3), 6);
+    /// assert_eq!(specialized::<String>(3), "3");
+    /// assert_eq!(specialized::<u8>(3), 0);
+    /// ```
+    #[inline]
     pub fn specialize_return<R>(
         self,
         f: impl FnOnce(T) -> R,
@@ -102,6 +142,7 @@ where
     }
 
     /// Run the specializer.
+    #[inline]
     pub fn run(self, ty: T) -> U {
         (self.0)(ty)
     }
@@ -121,6 +162,7 @@ where
 /// assert!(only_string("Hello").is_none());
 /// assert_eq!(only_string("Hello".to_string()).as_deref(), Some("Hello"));
 /// ```
+#[inline(always)]
 pub fn cast_identity<T, U>(ty: T) -> Option<U>
 where
     T: 'static,
@@ -146,6 +188,7 @@ where
 ///     Some("Hello"),
 /// );
 /// ```
+#[inline(always)]
 pub fn cast_identity_ref<T, U>(ty: &T) -> Option<&U>
 where
     T: 'static,
@@ -171,6 +214,7 @@ where
 ///     Some(&mut "Hello".to_string()),
 /// );
 /// ```
+#[inline(always)]
 pub fn cast_identity_mut<T, U>(ty: &mut T) -> Option<&mut U>
 where
     T: 'static,
