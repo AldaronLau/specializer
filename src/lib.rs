@@ -1,8 +1,8 @@
-//! Safe specialization on stable Rust with builder-like pattern 
+//! Safe specialization on stable Rust with builder-like pattern
 
 #![doc(
     html_logo_url = "https://ardaku.github.io/mm/logo.svg",
-    html_favicon_url = "https://ardaku.github.io/mm/icon.svg",
+    html_favicon_url = "https://ardaku.github.io/mm/icon.svg"
 )]
 #![no_std]
 #![forbid(unsafe_code)]
@@ -19,7 +19,7 @@
     unreachable_pub,
     unused_extern_crates,
     unused_qualifications,
-    variant_size_differences,
+    variant_size_differences
 )]
 #![deny(
     rustdoc::broken_intra_doc_links,
@@ -40,6 +40,7 @@ use core::{
 };
 
 /// Specialized behavior runner
+#[derive(Debug)]
 pub struct Specializer<T, U, F>(F, PhantomData<fn(T) -> U>);
 
 impl<T, U, F> Specializer<T, U, F>
@@ -48,10 +49,12 @@ where
     T: 'static,
     U: 'static,
 {
+    /// Create a new specializer with a fallback function.
     pub const fn new_fallback(f: F) -> Self {
         Self(f, PhantomData)
     }
 
+    /// Specialize on the parameter and the return type of the closure.
     pub fn specialize<P, R>(
         self,
         f: impl FnOnce(P) -> R,
@@ -76,6 +79,7 @@ where
         Specializer(f, phantom_data)
     }
 
+    /// Specialize on the parameter of the closure.
     pub fn specialize_param<P>(
         self,
         f: impl FnOnce(P) -> U,
@@ -86,6 +90,7 @@ where
         self.specialize::<P, U>(f)
     }
 
+    /// Specialize on the return type of the closure.
     pub fn specialize_return<R>(
         self,
         f: impl FnOnce(T) -> R,
@@ -96,6 +101,7 @@ where
         self.specialize::<T, R>(f)
     }
 
+    /// Run the specializer.
     pub fn run(self, ty: T) -> U {
         (self.0)(ty)
     }
@@ -120,9 +126,7 @@ where
     T: 'static,
     U: 'static,
 {
-    (&mut Some(ty) as &mut dyn Any)
-        .downcast_mut::<Option<U>>()?
-        .take()
+    <(dyn Any + 'static)>::downcast_mut::<Option<U>>(&mut Some(ty))?.take()
 }
 
 /// Attempt to cast `&T` to `&U`.
@@ -147,7 +151,7 @@ where
     T: 'static,
     U: 'static,
 {
-    (ty as &dyn Any).downcast_ref::<U>()
+    <(dyn Any + 'static)>::downcast_ref::<U>(ty)
 }
 
 /// Attempt to cast `&mut T` to `&mut U`.
@@ -172,5 +176,5 @@ where
     T: 'static,
     U: 'static,
 {
-    (ty as &mut dyn Any).downcast_mut::<U>()
+    <(dyn Any + 'static)>::downcast_mut::<U>(ty)
 }
