@@ -1,5 +1,78 @@
 //! Safe specialization on stable Rust with builder-like pattern
 //!
+//! # Types of Specialization
+//!
+//! There are two types of specialization:
+//!  - Specializing on types (example: special behavior for a generic when the
+//!    generic type is `Arc<str>` or some other type) - what's implemented by
+//!    this crate
+//!  - Specializing on traits (example: special behavior if the generic type
+//!    implements `ToString` or some other trait) - requires nightly
+//!    specialization feature
+//!
+//! <details>
+//! <summary>
+//! Limited Trait Specialization Workaround
+//! </summary>
+//!
+//! While it's not possible to implement specialization on any trait without
+//! nightly, it is possible to define a trait that allows specialization of
+//! "optional supertraits" defined as associated types.  The main limitations
+//! with this method are that all types must opt-in to a custom specialization
+//! trait in additon to the trait they do or don't implement being specialized
+//! on, and the traits need to be `dyn` compatible.
+//!
+//! ```rust,ignore
+//! use std::{
+//!     any::{self, Any},
+//!     fmt::Debug,
+//! };
+//!
+//! use specializer::SpecializerBorrowedParam;
+//!
+//! pub trait Specialize {
+//!     type Debug: ?Sized = Self;
+//!
+//!     fn try_debug(&self) -> &Self::Debug;
+//! }
+//!
+//! #[derive(Debug)]
+//! struct TypeWithDebug(u32);
+//! struct TypeWithoutDebug(u32);
+//!
+//! impl Specialize for TypeWithDebug {
+//!     type Debug = dyn Debug;
+//!
+//!     fn try_debug(&self) -> Self::Debug {
+//!         self
+//!     }
+//! }
+//!
+//! impl Specialize for TypeWithoutDebug {
+//!     fn try_debug(&self) -> &Self {
+//!         self
+//!     }
+//! }
+//!
+//! fn maybe_debug<T>(specialized: &T) -> String
+//! where
+//!     T: Specialize
+//! {
+//!     let fallback = |no_debug: &T| {
+//!         any::type_name_of_val(no_debug).to_owned()
+//!     };
+//!
+//!     SpecializerBorrowedParam::new(specialized, fallback)
+//!        .specialize(|debug: &dyn Debug| format!("{debug:?}"))
+//!        .run()
+//! }
+//!
+//! assert_eq!(maybe_debug(TypeWithDebug(&42)), "TypeWithDebug(42)");
+//! assert_eq!(maybe_debug(TypeWithoutDebug(&42)), "TypeWithoutDebug");
+//! ```
+//!
+//! </details>
+//!
 //! # Getting Started
 //!
 //! For the simplest example see [`Specializer::specialize_param()`].
@@ -58,142 +131,11 @@
     rustdoc::redundant_explicit_links
 )]
 
-use core::{
-    any::{Any, TypeId},
-    marker::PhantomData,
-};
+mod specializer;
 
-/// Specialized behavior runner (Owned -> Owned)
-#[derive(Debug)]
-pub struct Specializer<T, U, F>(T, F, PhantomData<fn(T) -> U>);
+use core::any::Any;
 
-impl<T, U, F> Specializer<T, U, F>
-where
-    F: FnOnce(T) -> U,
-    T: 'static,
-    U: 'static,
-{
-    /// Create a new specializer with a fallback function.
-    #[inline(always)]
-    pub const fn new(params: T, f: F) -> Self {
-        Self(params, f, PhantomData)
-    }
-
-    /// Specialize on the parameter and the return type of the closure.
-    ///
-    /// ```rust
-    /// use specializer::Specializer;
-    ///
-    /// fn specialized<T, U>(ty: T) -> U
-    /// where
-    ///     T: 'static,
-    ///     U: 'static + From<T> + From<u8>,
-    /// {
-    ///     Specializer::new(ty, From::from)
-    ///         .specialize(|int: i32| -> i32 { int * 2 })
-    ///         .specialize_param(|int: u8| { U::from(int * 3) })
-    ///         .run()
-    /// }
-    ///
-    /// assert_eq!(specialized::<i16, i32>(3), 3);
-    /// assert_eq!(specialized::<i32, i32>(3), 6);
-    /// assert_eq!(specialized::<u8, i32>(3), 9);
-    /// ```
-    #[inline]
-    pub fn specialize<P, R>(
-        self,
-        f: impl FnOnce(P) -> R,
-    ) -> Specializer<T, U, impl FnOnce(T) -> U>
-    where
-        P: 'static,
-        R: 'static,
-    {
-        let Specializer(ty, fallback, phantom_data) = self;
-        let f = |t: T| -> U {
-            if TypeId::of::<T>() == TypeId::of::<P>()
-                && TypeId::of::<U>() == TypeId::of::<R>()
-            {
-                let param = cast_identity::<T, P>(t).unwrap();
-
-                return cast_identity::<R, U>(f(param)).unwrap();
-            }
-
-            fallback(t)
-        };
-
-        Specializer(ty, f, phantom_data)
-    }
-
-    /// Specialize on the parameter of the closure.
-    ///
-    /// ```rust
-    /// use specializer::Specializer;
-    ///
-    /// fn specialized<T>(ty: T) -> String
-    /// where
-    ///     T: 'static
-    /// {
-    ///     let fallback = |_| "unknown".to_owned();
-    ///
-    ///     Specializer::new(ty, fallback)
-    ///         .specialize_param(|int: i32| (int * 2).to_string())
-    ///         .specialize_param(|string: String| string)
-    ///         .run()
-    /// }
-    ///
-    /// assert_eq!(specialized(3), "6");
-    /// assert_eq!(specialized("Hello world".to_string()), "Hello world");
-    /// assert_eq!(specialized(()), "unknown");
-    /// ```
-    #[inline]
-    pub fn specialize_param<P>(
-        self,
-        f: impl FnOnce(P) -> U,
-    ) -> Specializer<T, U, impl FnOnce(T) -> U>
-    where
-        P: 'static,
-    {
-        self.specialize::<P, U>(f)
-    }
-
-    /// Specialize on the return type of the closure.
-    ///
-    /// ```rust
-    /// use specializer::Specializer;
-    ///
-    /// fn specialized<T>(int: i32) -> T
-    /// where
-    ///     T: 'static + Default
-    /// {
-    ///     let fallback = |_| -> T { Default::default() };
-    ///
-    ///     Specializer::new(int, fallback)
-    ///         .specialize_return(|int| -> i32 { int * 2 })
-    ///         .specialize_return(|int| -> String { int.to_string() })
-    ///         .run()
-    /// }
-    ///
-    /// assert_eq!(specialized::<i32>(3), 6);
-    /// assert_eq!(specialized::<String>(3), "3");
-    /// assert_eq!(specialized::<u8>(3), 0);
-    /// ```
-    #[inline]
-    pub fn specialize_return<R>(
-        self,
-        f: impl FnOnce(T) -> R,
-    ) -> Specializer<T, U, impl FnOnce(T) -> U>
-    where
-        R: 'static,
-    {
-        self.specialize::<T, R>(f)
-    }
-
-    /// Run the specializer.
-    #[inline]
-    pub fn run(self) -> U {
-        (self.1)(self.0)
-    }
-}
+pub use self::specializer::Specializer;
 
 /// Attempt to cast owned `T` to `U`.
 ///
