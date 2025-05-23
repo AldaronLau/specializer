@@ -1,4 +1,4 @@
-//! Safe specialization on stable Rust with builder-like pattern
+//! Limited safe specialization on stable Rust with builder-like pattern
 //!
 //! # Types of Specialization
 //!

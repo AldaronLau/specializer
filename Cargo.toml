@@ -3,7 +3,7 @@ name = "specializer"
 version = "0.1.0"
 edition = "2024"
 description = """
-Safe specialization on stable Rust with builder-like pattern
+Limited safe specialization on stable Rust with builder-like pattern
 """
 license = "Apache-2.0 OR BSL-1.0 OR MIT"
 documentation = "https://docs.rs/specializer"

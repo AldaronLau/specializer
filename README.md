@@ -9,7 +9,7 @@
 [![Crates.io](https://img.shields.io/crates/l/specializer)](https://github.com/search?q=repo%3AAldaronLau%2Fspecializer+path%3A**%2FLICENSE*&type=code)
 [![Docs.rs](https://docs.rs/specializer/badge.svg)](https://docs.rs/specializer/)
  
-Safe specialization on stable Rust with builder-like pattern 
+Limited safe specialization on stable Rust with builder-like pattern 
 
 Check out the [documentation] for examples.
 
