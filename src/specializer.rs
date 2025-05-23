@@ -1,4 +1,4 @@
-use core::{any::TypeId, marker::PhantomData, convert};
+use core::{any::TypeId, convert, marker::PhantomData};
 
 /// Specialized behavior runner (Owned -> Owned)
 #[derive(Debug)]
