@@ -240,9 +240,9 @@ where
 /// );
 /// ```
 #[inline(always)]
-pub fn cast_identity_borrowed<'a, T, U>(ty: T) -> Option<U>
+pub fn cast_identity_borrowed<T, U>(ty: T) -> Option<U>
 where
-    T: CastIdentityBorrowed<'a, U>,
+    T: CastIdentityBorrowed<U>,
 {
     T::cast_identity(ty)
 }
@@ -260,7 +260,7 @@ where
 ///     Owned(T),
 /// }
 ///
-/// impl<'a, T, U> CastIdentityBorrowed<'a, MyThings<'a, U>> for MyThings<'a, T>
+/// impl<'a, T, U> CastIdentityBorrowed<MyThings<'a, U>> for MyThings<'a, T>
 /// where
 ///     T: 'static,
 ///     U: 'static,
@@ -314,12 +314,12 @@ where
 ///     Some(MyThings::<u32>::Nothing),
 /// );
 /// ```
-pub trait CastIdentityBorrowed<'a, U> {
+pub trait CastIdentityBorrowed<U> {
     /// Attempt to cast `self` to `U`.
     fn cast_identity(self) -> Option<U>;
 }
 
-impl<'a, T, U> CastIdentityBorrowed<'a, &'a U> for &'a T
+impl<'a, T, U> CastIdentityBorrowed<&'a U> for &'a T
 where
     T: 'static,
     U: 'static,
@@ -329,7 +329,7 @@ where
     }
 }
 
-impl<'a, T, U> CastIdentityBorrowed<'a, &'a mut U> for &'a mut T
+impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for &'a mut T
 where
     T: 'static,
     U: 'static,
