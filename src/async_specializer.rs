@@ -1,4 +1,4 @@
-use core::{any::TypeId, marker::PhantomData, future};
+use core::{any::TypeId, future, marker::PhantomData};
 
 /// Async specialized behavior runner (Owned -> Owned)
 #[derive(Debug)]
@@ -113,7 +113,8 @@ where
                 && TypeId::of::<U>() == TypeId::of::<R>()
             {
                 let param = crate::cast_identity::<T, P>(t).unwrap();
-                let param = crate::cast_identity::<P, T>(p(param).await).unwrap();
+                let param =
+                    crate::cast_identity::<P, T>(p(param).await).unwrap();
                 let ret = crate::cast_identity::<U, R>(f(param).await).unwrap();
 
                 return crate::cast_identity::<R, U>(r(ret).await).unwrap();
