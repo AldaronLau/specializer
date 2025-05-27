@@ -4,7 +4,7 @@
 //!
 //! There are two types of specialization:
 //!  - Specializing on types (example: special behavior for a generic when the
-//!    generic type is `Arc<str>` or some other type) - what's implemented by
+//!    generic type is `Arc<str>` or some other type) - what's implemented in
 //!    this crate
 //!  - Specializing on traits (example: special behavior if the generic type
 //!    implements `ToString` or some other trait) - requires nightly
@@ -79,16 +79,16 @@
 //!
 //! The other types may be required depending on your use case:
 //!
-//! | Async | Takes    | Returns  | Type                              |
-//! |-------|----------|----------|-----------------------------------|
-//! | False | Owned    | Owned    | [`Specializer`]                   |
-//! | False | Owned    | Borrowed | (not supported)                   |
-//! | False | Borrowed | Owned    | `SpecializerBorrowedParam`        |
-//! | False | Borrowed | Borrowed | `SpecializerBorrowed`             |
-//! | True  | Owned    | Owned    | [`AsyncSpecializer`]              |
-//! | True  | Owned    | Borrowed | (not supported)                   |
-//! | True  | Borrowed | Owned    | `AsyncSpecializerBorrowedParam`   |
-//! | True  | Borrowed | Borrowed | `AsyncSpecializerBorrowed`        |
+//! | Async | Takes    | Returns  | Type                               |
+//! |-------|----------|----------|------------------------------------|
+//! | False | Owned    | Owned    | [`Specializer`]                    |
+//! | False | Owned    | Borrowed | `SpecializerBorrowedReturn`        |
+//! | False | Borrowed | Owned    | [`SpecializerBorrowedParam`]       |
+//! | False | Borrowed | Borrowed | `SpecializerBorrowed`              |
+//! | True  | Owned    | Owned    | [`AsyncSpecializer`]               |
+//! | True  | Owned    | Borrowed | `AsyncSpecializerBorrowedReturn`   |
+//! | True  | Borrowed | Owned    | [`AsyncSpecializerBorrowedParam`]  |
+//! | True  | Borrowed | Borrowed | `AsyncSpecializerBorrowed`         |
 //!
 //! ## Borrowing
 //!
@@ -133,8 +133,10 @@
 
 mod api;
 mod async_specializer;
+mod async_specializer_borrowed_param;
 mod cast_identity_borrowed;
 mod specializer;
+mod specializer_borrowed_param;
 
 pub use self::{
     api::{
@@ -142,6 +144,8 @@ pub use self::{
         cast_identity_ref,
     },
     async_specializer::AsyncSpecializer,
+    async_specializer_borrowed_param::AsyncSpecializerBorrowedParam,
     cast_identity_borrowed::CastIdentityBorrowed,
     specializer::Specializer,
+    specializer_borrowed_param::SpecializerBorrowedParam,
 };

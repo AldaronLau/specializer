@@ -109,5 +109,5 @@ pub fn cast_identity_borrowed<T, U>(ty: T) -> Option<U>
 where
     T: CastIdentityBorrowed<U>,
 {
-    T::cast_identity(ty)
+    T::is_same().then(|| T::cast_identity(ty)).flatten()
 }
