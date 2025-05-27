@@ -90,7 +90,7 @@ where
      * assert_eq!(specialized::<i16, i32>(3), 3);
      * assert_eq!(specialized::<i32, i32>(3), 6);
      * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_map<P, R>(
         self,
@@ -142,7 +142,7 @@ where
      * assert_eq!(specialized(3), "6");
      * assert_eq!(specialized("Hello world".to_string()), "Hello world");
      * assert_eq!(specialized(()), "unknown");
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_param<P>(
         self,
@@ -174,7 +174,7 @@ where
      * assert_eq!(specialized::<i32>(3), 6);
      * assert_eq!(specialized::<String>(3), "3");
      * assert_eq!(specialized::<u8>(3), 0);
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_return<R>(
         self,
@@ -208,7 +208,7 @@ where
      * assert_eq!(specialized::<i16, i32>(3), 3);
      * assert_eq!(specialized::<i32, i32>(3), 6);
      * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_map_param<P>(
         self,
@@ -244,7 +244,7 @@ where
      * assert_eq!(specialized::<i16, i32>(3), 3);
      * assert_eq!(specialized::<i8, i16>(3), 6);
      * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_map_return<R>(
         self,

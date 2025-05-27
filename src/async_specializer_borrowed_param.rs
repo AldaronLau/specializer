@@ -101,7 +101,7 @@ where
      *     assert_eq!(specialized::<i32, i32>(3).await, 6);
      *     assert_eq!(specialized::<u8, i32>(3).await, 9);
      * });
-     * ``*/ */
+     * ``` */
     #[inline]
     pub fn specialize_map<P, R>(
         self,
@@ -161,7 +161,7 @@ where
      *     );
      *     assert_eq!(specialized(()).await, "unknown");
      * });
-     * ``*/ */
+     * ``` */
     #[inline]
     pub fn specialize_param<P>(
         self,
@@ -197,7 +197,7 @@ where
      *     assert_eq!(specialized::<String>(3).await, "3");
      *     assert_eq!(specialized::<u8>(3).await, 0);
      * });
-     * ``*/ */
+     * `` */
     #[inline]
     pub fn specialize_return<R>(
         self,
@@ -238,7 +238,7 @@ where
      *     assert_eq!(specialized::<i32, i32>(3).await, 6);
      *     assert_eq!(specialized::<u8, i32>(3).await, 9);
      * });
-     * ``*/ */
+     * `` */
     #[inline]
     pub fn specialize_map_param<P>(
         self,
@@ -284,7 +284,7 @@ where
      *     assert_eq!(specialized::<i8, i16>(3).await, 6);
      *     assert_eq!(specialized::<u8, i32>(3).await, 9);
      * });
-     * ```*/ */
+     * ``` */
     #[inline]
     pub fn specialize_map_return<R>(
         self,
