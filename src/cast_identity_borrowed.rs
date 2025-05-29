@@ -2,6 +2,9 @@ use core::any::TypeId;
 
 /// Identity cast on a borrowed type
 ///
+/// Default implementation always fails the cast operation (`cast_identity()`
+/// returns [`None`], and `is_same()` returns [`false`]).
+///
 /// ```rust
 /// use core::any::TypeId;
 ///
@@ -70,12 +73,16 @@ use core::any::TypeId;
 /// assert!(only_u32_things(MyThings::Owned(42i32)).is_none());
 /// assert!(only_u32_things(MyThings::<i32>::Nothing).is_none());
 /// ```
-pub trait CastIdentityBorrowed<U> {
+pub trait CastIdentityBorrowed<U>: Sized {
     /// Attempt to cast `self` to `U`.
-    fn cast_identity(self) -> Option<U>;
+    fn cast_identity(self) -> Option<U> {
+        None
+    }
 
     /// Return true if `Self` type is the same as type `U`.
-    fn is_same() -> bool;
+    fn is_same() -> bool {
+        false
+    }
 }
 
 impl<'a, T, U> CastIdentityBorrowed<&'a U> for &'a T
@@ -106,4 +113,18 @@ where
     fn is_same() -> bool {
         TypeId::of::<U>() == TypeId::of::<T>()
     }
+}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a U> for &'a mut T
+where
+    T: 'static,
+    U: 'static,
+{
+}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for &'a T
+where
+    T: 'static,
+    U: 'static,
+{
 }

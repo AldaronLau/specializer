@@ -25,50 +25,64 @@
 //! ```rust,ignore
 //! use std::{
 //!     any::{self, Any},
-//!     fmt::Debug,
+//!     fmt
 //! };
 //!
-//! use specializer::SpecializerBorrowedParam;
+//! use specializer::{CastIdentityBorrowed, SpecializerBorrowedParam};
 //!
 //! pub trait Specialize {
-//!     type Debug: ?Sized = Self;
+//!     type Debug<'a>: CastIdentityBorrowed<Self::Debug<'a>> where Self: 'a;
 //!
-//!     fn try_debug(&self) -> &Self::Debug;
+//!     fn try_debug(&self) -> Self::Debug<'_>;
 //! }
 //!
 //! #[derive(Debug)]
 //! struct TypeWithDebug(u32);
 //! struct TypeWithoutDebug(u32);
 //!
-//! impl Specialize for TypeWithDebug {
-//!     type Debug = dyn Debug;
+//! struct Debug<'a>(&'a dyn fmt::Debug);
 //!
-//!     fn try_debug(&self) -> Self::Debug {
-//!         self
+//! impl<'a> CastIdentityBorrowed<Debug<'a>> for Debug<'a> {
+//!     fn cast_identity(self) -> Option<Debug<'a>> {
+//!         Some(self)
+//!     }
+//!
+//!     fn is_same() -> bool {
+//!         true
+//!     }
+//! }
+//!
+//! impl Specialize for TypeWithDebug {
+//!     type Debug<'a> = Debug<'a>;
+//!
+//!     fn try_debug(&self) -> Self::Debug<'_> {
+//!         Debug(self)
 //!     }
 //! }
 //!
 //! impl Specialize for TypeWithoutDebug {
-//!     fn try_debug(&self) -> &Self {
+//!     type Debug<'a> = &'a Self;
+//!
+//!     fn try_debug(&self) -> Self::Debug<'_> {
 //!         self
 //!     }
 //! }
 //!
 //! fn maybe_debug<T>(specialized: &T) -> String
 //! where
-//!     T: Specialize
+//!     T: Specialize + 'static,
 //! {
-//!     let fallback = |no_debug: &T| {
-//!         any::type_name_of_val(no_debug).to_owned()
+//!     let fallback = |no_debug: T::Debug<'_>| {
+//!         any::type_name_of_val(&no_debug).to_owned()
 //!     };
 //!
-//!     SpecializerBorrowedParam::new(specialized, fallback)
-//!        .specialize(|debug: &dyn Debug| format!("{debug:?}"))
+//!     SpecializerBorrowedParam::new(specialized.try_debug(), fallback)
+//!        .specialize_param::<Debug<'_>>(|debug| format!("{:?}", debug.0))
 //!        .run()
 //! }
 //!
-//! assert_eq!(maybe_debug(TypeWithDebug(&42)), "TypeWithDebug(42)");
-//! assert_eq!(maybe_debug(TypeWithoutDebug(&42)), "TypeWithoutDebug");
+//! assert_eq!(maybe_debug(&TypeWithDebug(42)), "TypeWithDebug(42)");
+//! assert_eq!(maybe_debug(&TypeWithoutDebug(42)), "TypeWithoutDebug");
 //! ```
 //!
 //! </details>
