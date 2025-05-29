@@ -73,35 +73,40 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// both.
-    /*
-     * ```rust
-     * use std::future;
-     *
-     * use specializer::AsyncSpecializerBorrowedParam;
-     * use pasts::Executor;
-     *
-     * async fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     AsyncSpecializerBorrowedParam::new(ty, async |ty| ty.into())
-     *         .specialize(async |int: i32| -> i32 { int * 2 })
-     *         .specialize_map(
-     *             async |int: u8| int * 3,
-     *             async |ty| ty.into(),
-     *             future::ready::<U>,
-     *         )
-     *         .run()
-     *         .await
-     * }
-     *
-     * Executor::default().block_on(async {
-     *     assert_eq!(specialized::<i16, i32>(3).await, 3);
-     *     assert_eq!(specialized::<i32, i32>(3).await, 6);
-     *     assert_eq!(specialized::<u8, i32>(3).await, 9);
-     * });
-     * ``` */
+    ///
+    /// ```rust
+    /// use std::{future, convert};
+    ///
+    /// use pasts::Executor;
+    /// use specializer::AsyncSpecializerBorrowedParam;
+    ///
+    /// async fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T> + From<u8>,
+    /// {
+    ///     let to = async |ty: &mut T| ty.clone().into();
+    ///
+    ///     AsyncSpecializerBorrowedParam::new(ty, to)
+    ///         .specialize(async |int: &mut i32| -> i32 { *int * 2 })
+    ///         .specialize_map(
+    ///             async |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             to,
+    ///             future::ready::<U>,
+    ///         )
+    ///         .run()
+    ///         .await
+    /// }
+    ///  
+    /// Executor::default().block_on(async {
+    ///     assert_eq!(specialized::<i16, i32>(&mut 3).await, 3);
+    ///     assert_eq!(specialized::<i32, i32>(&mut 3).await, 6);
+    ///     assert_eq!(specialized::<u8, i32>(&mut 3).await, 9);
+    /// });
+    /// ```
     #[inline]
     pub fn specialize_map<P, R>(
         self,

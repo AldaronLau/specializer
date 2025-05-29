@@ -65,32 +65,36 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// both.
-    /*
-     *
-     * ```rust
-     * use std::convert;
-     *
-     * use specializer::SpecializerBorrowedParam;
-     *
-     * fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     SpecializerBorrowedParam::new(ty, From::from)
-     *         .specialize(|int: i32| -> i32 { int * 2 })
-     *         .specialize_map(
-     *             |int: u8| int * 3,
-     *             From::from,
-     *             convert::identity::<U>,
-     *         )
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(3), 3);
-     * assert_eq!(specialized::<i32, i32>(3), 6);
-     * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ``` */
+    ///
+    /// ```rust
+    /// use std::convert;
+    ///
+    /// use specializer::SpecializerBorrowedParam;
+    ///
+    /// fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T> + From<u8>,
+    /// {
+    ///     let to = |ty: &mut T| ty.clone().into();
+    ///
+    ///     SpecializerBorrowedParam::new(ty, to)
+    ///         .specialize(|int: &mut i32| -> i32 { *int * 2 })
+    ///         .specialize_map(
+    ///             |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             to,
+    ///             convert::identity::<U>,
+    ///         )
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i16, i32>(&mut 3), 3);
+    /// assert_eq!(specialized::<i32, i32>(&mut 3), 6);
+    /// assert_eq!(specialized::<u8, i32>(&mut 3), 9);
+    /// ```
     #[inline]
     pub fn specialize_map<P, R>(
         self,
