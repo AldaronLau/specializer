@@ -127,26 +127,25 @@ where
     }
 
     /// Specialize on the parameter of the closure.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowedParam;
-     *
-     * fn specialized<T>(ty: T) -> String
-     * where
-     *     T: 'static
-     * {
-     *     let fallback = |_| "unknown".to_owned();
-     *
-     *     SpecializerBorrowedParam::new(ty, fallback)
-     *         .specialize_param(|int: i32| (int * 2).to_string())
-     *         .specialize_param(|string: String| string)
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized(3), "6");
-     * assert_eq!(specialized("Hello world".to_string()), "Hello world");
-     * assert_eq!(specialized(()), "unknown");
-     * ``` */
+    ///
+    /// ```rust
+    /// use specializer::SpecializerBorrowedParam;
+    ///
+    /// fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T> + From<u8> + From<i32>,
+    /// {
+    ///     SpecializerBorrowedParam::new(ty, |ty| ty.clone().into())
+    ///         .specialize_param(|int: &mut i32| { U::from( *int * 2) })
+    ///         .specialize_param(|int: &mut u8| { U::from(*int * 3) })
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i16, i32>(&mut 3), 3);
+    /// assert_eq!(specialized::<i32, i32>(&mut 3), 6);
+    /// assert_eq!(specialized::<u8, i32>(&mut 3), 9);
+    /// ```
     #[inline]
     pub fn specialize_param<P>(
         self,
