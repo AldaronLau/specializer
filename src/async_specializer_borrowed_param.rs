@@ -175,30 +175,30 @@ where
     }
 
     /// Specialize on the return type of the closure.
-    /*
-     * ```rust
-     * use specializer::AsyncSpecializerBorrowedParam;
-     * use pasts::Executor;
-     *
-     * async fn specialized<T>(int: i32) -> T
-     * where
-     *     T: 'static + Default
-     * {
-     *     let fallback = async |_| -> T { Default::default() };
-     *
-     *     AsyncSpecializerBorrowedParam::new(int, fallback)
-     *         .specialize_return(async |int| -> i32 { int * 2 })
-     *         .specialize_return(async |int| -> String { int.to_string() })
-     *         .run()
-     *         .await
-     * }
-     *
-     * Executor::default().block_on(async {
-     *     assert_eq!(specialized::<i32>(3).await, 6);
-     *     assert_eq!(specialized::<String>(3).await, "3");
-     *     assert_eq!(specialized::<u8>(3).await, 0);
-     * });
-     * `` */
+    ///
+    /// ```rust
+    /// use specializer::AsyncSpecializerBorrowedParam;
+    /// use pasts::Executor;
+    ///
+    /// async fn specialized<T>(int: &mut i32) -> T
+    /// where
+    ///     T: 'static + Default
+    /// {
+    ///     let fallback = async |_| -> T { Default::default() };
+    ///
+    ///     AsyncSpecializerBorrowedParam::new(int, fallback)
+    ///         .specialize_return(async |&mut int| -> i32 { int * 2 })
+    ///         .specialize_return(async |&mut int| -> String { int.to_string() })
+    ///         .run()
+    ///         .await
+    /// }
+    ///
+    /// Executor::default().block_on(async {
+    ///     assert_eq!(specialized::<i32>(&mut 3).await, 6);
+    ///     assert_eq!(specialized::<String>(&mut 3).await, "3");
+    ///     assert_eq!(specialized::<u8>(&mut 3).await, 0);
+    /// });
+    /// ```
     #[inline]
     pub fn specialize_return<R>(
         self,
@@ -212,34 +212,37 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use std::convert;
-     *
-     * use specializer::AsyncSpecializerBorrowedParam;
-     * use pasts::Executor;
-     *
-     * async fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     AsyncSpecializerBorrowedParam::new(ty, async |ty| ty.into())
-     *         .specialize(async |int: i32| -> i32 { int * 2 })
-     *         .specialize_map_param(
-     *             async |int: u8| int * 3,
-     *             async |ty| ty.into(),
-     *         )
-     *         .run()
-     *         .await
-     * }
-     *
-     * Executor::default().block_on(async {
-     *     assert_eq!(specialized::<i16, i32>(3).await, 3);
-     *     assert_eq!(specialized::<i32, i32>(3).await, 6);
-     *     assert_eq!(specialized::<u8, i32>(3).await, 9);
-     * });
-     * `` */
+    ///
+    /// ```rust
+    /// use specializer::AsyncSpecializerBorrowedParam;
+    /// use pasts::Executor;
+    ///
+    /// async fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T>,
+    /// {
+    ///     let f = async |x: &mut T| (*x).clone().into();
+    ///
+    ///     AsyncSpecializerBorrowedParam::new(ty, f)
+    ///         .specialize(async |int: &mut i32| -> i32 { *int * 2 })
+    ///         .specialize_map_param(
+    ///             async |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             f,
+    ///         )
+    ///         .run()
+    ///         .await
+    /// }
+    ///
+    /// Executor::default().block_on(async {
+    ///     assert_eq!(specialized::<i16, i32>(&mut 3).await, 3);
+    ///     assert_eq!(specialized::<i32, i32>(&mut 3).await, 6);
+    ///     assert_eq!(specialized::<u8, i32>(&mut 3).await, 9);
+    /// });
+    /// ```
     #[inline]
     pub fn specialize_map_param<P>(
         self,
@@ -255,37 +258,37 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use std::convert;
-     *
-     * use specializer::AsyncSpecializerBorrowedParam;
-     * use pasts::Executor;
-     *
-     * async fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     AsyncSpecializerBorrowedParam::new(ty, async |ty| ty.into())
-     *         .specialize_map_return(
-     *             async |ty| ty.into(),
-     *             async |int: i16| int * 2,
-     *         )
-     *         .specialize_map_param(
-     *             async |int: u8| int * 3,
-     *             async |ty| ty.into(),
-     *         )
-     *         .run()
-     *         .await
-     * }
-     *
-     * Executor::default().block_on(async {
-     *     assert_eq!(specialized::<i16, i32>(3).await, 3);
-     *     assert_eq!(specialized::<i8, i16>(3).await, 6);
-     *     assert_eq!(specialized::<u8, i32>(3).await, 9);
-     * });
-     * ``` */
+    ///
+    /// ```rust
+    /// use specializer::AsyncSpecializerBorrowedParam;
+    /// use pasts::Executor;
+    ///
+    /// async fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T>,
+    /// {
+    ///     let f = async |x: &mut T| (*x).clone().into();
+    ///
+    ///     AsyncSpecializerBorrowedParam::new(ty, f)
+    ///         .specialize_map_return(f, async |int: i16| int * 2)
+    ///         .specialize_map_param(
+    ///             async |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             f,
+    ///         )
+    ///         .run()
+    ///         .await
+    /// }
+    ///
+    /// Executor::default().block_on(async {
+    ///     assert_eq!(specialized::<i16, i32>(&mut 3).await, 3);
+    ///     assert_eq!(specialized::<i8, i16>(&mut 3).await, 6);
+    ///     assert_eq!(specialized::<u8, i32>(&mut 3).await, 9);
+    /// });
+    /// ```
     #[inline]
     pub fn specialize_map_return<R>(
         self,

@@ -158,26 +158,26 @@ where
     }
 
     /// Specialize on the return type of the closure.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowedParam;
-     *
-     * fn specialized<T>(int: i32) -> T
-     * where
-     *     T: 'static + Default
-     * {
-     *     let fallback = |_| -> T { Default::default() };
-     *
-     *     SpecializerBorrowedParam::new(int, fallback)
-     *         .specialize_return(|int| -> i32 { int * 2 })
-     *         .specialize_return(|int| -> String { int.to_string() })
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i32>(3), 6);
-     * assert_eq!(specialized::<String>(3), "3");
-     * assert_eq!(specialized::<u8>(3), 0);
-     * ``` */
+    ///
+    /// ```rust
+    /// use specializer::SpecializerBorrowedParam;
+    ///
+    /// fn specialized<T>(int: &mut i32) -> T
+    /// where
+    ///     T: 'static + Default
+    /// {
+    ///     let fallback = |_| -> T { Default::default() };
+    ///
+    ///     SpecializerBorrowedParam::new(int, fallback)
+    ///         .specialize_return(|&mut int| -> i32 { int * 2 })
+    ///         .specialize_return(|&mut int| -> String { int.to_string() })
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i32>(&mut 3), 6);
+    /// assert_eq!(specialized::<String>(&mut 3), "3");
+    /// assert_eq!(specialized::<u8>(&mut 3), 0);
+    /// ```
     #[inline]
     pub fn specialize_return<R>(
         self,
@@ -191,27 +191,33 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use std::convert;
-     *
-     * use specializer::SpecializerBorrowedParam;
-     *
-     * fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     SpecializerBorrowedParam::new(ty, From::from)
-     *         .specialize(|int: i32| -> i32 { int * 2 })
-     *         .specialize_map_param(|int: u8| int * 3, From::from)
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(3), 3);
-     * assert_eq!(specialized::<i32, i32>(3), 6);
-     * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ``` */
+    ///
+    /// ```rust
+    /// use specializer::SpecializerBorrowedParam;
+    ///
+    /// fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T>,
+    /// {
+    ///     let f = |x: &mut T| (*x).clone().into();
+    ///
+    ///     SpecializerBorrowedParam::new(ty, f)
+    ///         .specialize(|int: &mut i32| -> i32 { *int * 2 })
+    ///         .specialize_map_param(
+    ///             |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             f,
+    ///         )
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i16, i32>(&mut 3), 3);
+    /// assert_eq!(specialized::<i32, i32>(&mut 3), 6);
+    /// assert_eq!(specialized::<u8, i32>(&mut 3), 9);
+    /// ```
     #[inline]
     pub fn specialize_map_param<P>(
         self,
@@ -227,27 +233,33 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use std::convert;
-     *
-     * use specializer::SpecializerBorrowedParam;
-     *
-     * fn specialized<T, U>(ty: T) -> U
-     * where
-     *     T: 'static,
-     *     U: 'static + From<T>,
-     * {
-     *     SpecializerBorrowedParam::new(ty, From::from)
-     *         .specialize_map_return(From::from, |int: i16| int * 2)
-     *         .specialize_map_param(|int: u8| int * 3, From::from)
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(3), 3);
-     * assert_eq!(specialized::<i8, i16>(3), 6);
-     * assert_eq!(specialized::<u8, i32>(3), 9);
-     * ``` */
+    ///
+    /// ```rust
+    /// use specializer::SpecializerBorrowedParam;
+    ///
+    /// fn specialized<T, U>(ty: &mut T) -> U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T>,
+    /// {
+    ///     let f = |x: &mut T| (*x).clone().into();
+    ///
+    ///     SpecializerBorrowedParam::new(ty, f)
+    ///         .specialize_map_return(f, |int: i16| int * 2)
+    ///         .specialize_map_param(
+    ///             |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             f,
+    ///         )
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i16, i32>(&mut 3), 3);
+    /// assert_eq!(specialized::<i8, i16>(&mut 3), 6);
+    /// assert_eq!(specialized::<u8, i32>(&mut 3), 9);
+    /// ```
     #[inline]
     pub fn specialize_map_return<R>(
         self,
