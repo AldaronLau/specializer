@@ -98,7 +98,7 @@
 //! | False | Owned    | Owned    | [`Specializer`]                    |
 //! | False | Owned    | Borrowed | `SpecializerBorrowedReturn`        |
 //! | False | Borrowed | Owned    | [`SpecializerBorrowedParam`]       |
-//! | False | Borrowed | Borrowed | `SpecializerBorrowed`              |
+//! | False | Borrowed | Borrowed | [`SpecializerBorrowed`]            |
 //! | True  | Owned    | Owned    | [`AsyncSpecializer`]               |
 //! | True  | Owned    | Borrowed | `AsyncSpecializerBorrowedReturn`   |
 //! | True  | Borrowed | Owned    | [`AsyncSpecializerBorrowedParam`]  |
@@ -150,6 +150,7 @@ mod async_specializer;
 mod async_specializer_borrowed_param;
 mod cast_identity_borrowed;
 mod specializer;
+mod specializer_borrowed;
 mod specializer_borrowed_param;
 
 pub use self::{
@@ -161,5 +162,6 @@ pub use self::{
     async_specializer_borrowed_param::AsyncSpecializerBorrowedParam,
     cast_identity_borrowed::CastIdentityBorrowed,
     specializer::Specializer,
+    specializer_borrowed::SpecializerBorrowed,
     specializer_borrowed_param::SpecializerBorrowedParam,
 };

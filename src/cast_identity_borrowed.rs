@@ -128,3 +128,21 @@ where
     U: 'static,
 {
 }
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for Option<T>
+where
+    T: CastIdentityBorrowed<U>,
+{
+    fn cast_identity(self) -> Option<Option<U>> {
+        Some(if let Some(inner) = self {
+            Some(crate::cast_identity_borrowed(inner)?)
+        } else {
+            None
+        })
+    }
+
+    #[inline(always)]
+    fn is_same() -> bool {
+        <T as CastIdentityBorrowed<U>>::is_same()
+    }
+}

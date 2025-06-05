@@ -27,6 +27,15 @@ The current MSRV is Rust 1.85.
 
 Any future MSRV updates will follow the [Ardaku MSRV guidelines].
 
+## Alternatives
+
+ - [castaway](https://crates.io/crates/castaway)
+ - [try-specialize](https://crates.io/crates/try-specialize)
+ - [coe-rs](https://crates.io/crates/coe-rs)
+ - [downcast-rs](https://crates.io/crates/downcast-rs)
+ - [syllogism](https://crates.io/crates/syllogism)
+ - [identity\_cast](https://crates.io/crates/identity_cast)
+
 ## License
 
 Copyright © 2025 The Specializer Contributors.
