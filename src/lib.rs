@@ -10,83 +10,6 @@
 //!    implements `ToString` or some other trait) - requires nightly
 //!    specialization feature
 //!
-//! <details>
-//! <summary>
-//! Limited Trait Specialization Workaround
-//! </summary>
-//!
-//! While it's not possible to implement specialization on any trait without
-//! nightly, it is possible to define a trait that allows specialization of
-//! "optional supertraits" defined as associated types.  The main limitations
-//! with this method are that all types must opt-in to a custom specialization
-//! trait in additon to the trait they do or don't implement being specialized
-//! on, and the traits need to be `dyn` compatible.
-//!
-//! ```rust,ignore
-//! use std::{
-//!     any::{self, Any},
-//!     fmt
-//! };
-//!
-//! use specializer::{CastIdentityBorrowed, SpecializerBorrowedParam};
-//!
-//! pub trait Specialize {
-//!     type Debug<'a>: CastIdentityBorrowed<Self::Debug<'a>> where Self: 'a;
-//!
-//!     fn try_debug(&self) -> Self::Debug<'_>;
-//! }
-//!
-//! #[derive(Debug)]
-//! struct TypeWithDebug(u32);
-//! struct TypeWithoutDebug(u32);
-//!
-//! struct Debug<'a>(&'a dyn fmt::Debug);
-//!
-//! impl<'a> CastIdentityBorrowed<Debug<'a>> for Debug<'a> {
-//!     fn cast_identity(self) -> Option<Debug<'a>> {
-//!         Some(self)
-//!     }
-//!
-//!     fn is_same() -> bool {
-//!         true
-//!     }
-//! }
-//!
-//! impl Specialize for TypeWithDebug {
-//!     type Debug<'a> = Debug<'a>;
-//!
-//!     fn try_debug(&self) -> Self::Debug<'_> {
-//!         Debug(self)
-//!     }
-//! }
-//!
-//! impl Specialize for TypeWithoutDebug {
-//!     type Debug<'a> = &'a Self;
-//!
-//!     fn try_debug(&self) -> Self::Debug<'_> {
-//!         self
-//!     }
-//! }
-//!
-//! fn maybe_debug<T>(specialized: &T) -> String
-//! where
-//!     T: Specialize + 'static,
-//! {
-//!     let fallback = |no_debug: T::Debug<'_>| {
-//!         any::type_name_of_val(&no_debug).to_owned()
-//!     };
-//!
-//!     SpecializerBorrowedParam::new(specialized.try_debug(), fallback)
-//!        .specialize_param::<Debug<'_>>(|debug| format!("{:?}", debug.0))
-//!        .run()
-//! }
-//!
-//! assert_eq!(maybe_debug(&TypeWithDebug(42)), "TypeWithDebug(42)");
-//! assert_eq!(maybe_debug(&TypeWithoutDebug(42)), "TypeWithoutDebug");
-//! ```
-//!
-//! </details>
-//!
 //! # Getting Started
 //!
 //! For the simplest example see [`Specializer::specialize_param()`].
@@ -102,7 +25,7 @@
 //! | True  | Owned    | Owned    | [`AsyncSpecializer`]               |
 //! | True  | Owned    | Borrowed | `AsyncSpecializerBorrowedReturn`   |
 //! | True  | Borrowed | Owned    | [`AsyncSpecializerBorrowedParam`]  |
-//! | True  | Borrowed | Borrowed | `AsyncSpecializerBorrowed`         |
+//! | True  | Borrowed | Borrowed | [`AsyncSpecializerBorrowed`]       |
 //!
 //! ## Borrowing
 //!
@@ -147,6 +70,7 @@
 
 mod api;
 mod async_specializer;
+mod async_specializer_borrowed;
 mod async_specializer_borrowed_param;
 mod cast_identity_borrowed;
 mod specializer;
@@ -159,6 +83,7 @@ pub use self::{
         cast_identity_ref,
     },
     async_specializer::AsyncSpecializer,
+    async_specializer_borrowed::AsyncSpecializerBorrowed,
     async_specializer_borrowed_param::AsyncSpecializerBorrowedParam,
     cast_identity_borrowed::CastIdentityBorrowed,
     specializer::Specializer,
