@@ -144,26 +144,23 @@ where
     }
 
     /// Specialize on the parameter of the closure.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowed;
-     *
-     * fn specialized<T, U>(ty: &mut T) -> U
-     * where
-     *     T: 'static + Clone,
-     *     U: 'static + From<T> + From<u8> + From<i32>,
-     * {
-     *     SpecializerBorrowed::new(ty, |ty| ty.clone().into())
-     *         .specialize_param(|int: &mut i32| { U::from( *int * 2) })
-     *         .specialize_param(|int: &mut u8| { U::from(*int * 3) })
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(&mut 3), 3);
-     * assert_eq!(specialized::<i32, i32>(&mut 3), 6);
-     * assert_eq!(specialized::<u8, i32>(&mut 3), 9);
-     * ```
-     * */ */
+    ///
+    /// ```rust
+    /// use specializer::{CastIdentityBorrowed, SpecializerBorrowed};
+    ///
+    /// fn specialized<'a, T, U>(a: &'a mut T, b: &'a U) -> Option<&'a U>
+    /// where
+    ///     T: 'static,
+    ///     U: 'static,
+    /// {
+    ///     SpecializerBorrowed::new(a, |_ty| None)
+    ///         .specialize_param(|int: &mut u32| Some(b))
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized::<i32, i32>(&mut 3, &5), None);
+    /// assert_eq!(specialized::<u32, u32>(&mut 3, &5), Some(&5));
+    /// ```
     #[inline]
     pub fn specialize_param<P>(
         self,
@@ -176,27 +173,24 @@ where
     }
 
     /// Specialize on the return type of the closure.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowed;
-     *
-     * fn specialized<T>(int: &mut i32) -> T
-     * where
-     *     T: 'static + Default
-     * {
-     *     let fallback = |_| -> T { Default::default() };
-     *
-     *     SpecializerBorrowed::new(int, fallback)
-     *         .specialize_return(|&mut int| -> i32 { int * 2 })
-     *         .specialize_return(|&mut int| -> String { int.to_string() })
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i32>(&mut 3), 6);
-     * assert_eq!(specialized::<String>(&mut 3), "3");
-     * assert_eq!(specialized::<u8>(&mut 3), 0);
-     * ```
-     */
+    ///
+    /// ```rust
+    /// use specializer::{CastIdentityBorrowed, SpecializerBorrowed};
+    ///
+    /// fn specialized<'a, U>(a: &'a mut i32, b: &'a u32) -> Option<&'a U>
+    /// where
+    ///     U: 'static,
+    /// {
+    ///     SpecializerBorrowed::new(a, |_ty| None)
+    ///         .specialize_return(|int| -> Option<&i32> { Some(int) })
+    ///         .specialize_return(|int| -> Option<&u32> { Some(b) })
+    ///         .run()
+    /// }
+    ///
+    /// assert_eq!(specialized(&mut 3, &5), Some(&3i32));
+    /// assert_eq!(specialized(&mut 3, &5), Some(&5u32));
+    /// assert_eq!(specialized::<u8>(&mut 3, &5), None);
+    /// ```
     #[inline]
     pub fn specialize_return<R>(
         self,
