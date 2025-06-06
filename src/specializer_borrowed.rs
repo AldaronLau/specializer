@@ -204,34 +204,49 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowed;
-     *
-     * fn specialized<T, U>(ty: &mut T) -> U
-     * where
-     *     T: 'static + Clone,
-     *     U: 'static + From<T>,
-     * {
-     *     let f = |x: &mut T| (*x).clone().into();
-     *
-     *     SpecializerBorrowed::new(ty, f)
-     *         .specialize(|int: &mut i32| -> i32 { *int * 2 })
-     *         .specialize_map_param(
-     *             |int: &mut u8| {
-     *                 *int *= 3;
-     *                 int
-     *             },
-     *             f,
-     *         )
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(&mut 3), 3);
-     * assert_eq!(specialized::<i32, i32>(&mut 3), 6);
-     * assert_eq!(specialized::<u8, i32>(&mut 3), 9);
-     * ```
-     */
+    ///
+    /// ```rust
+    /// use std::convert;
+    ///
+    /// use specializer::SpecializerBorrowed;
+    ///
+    /// fn specialized<'a, T, U>(a: &'a mut T, b: &'a U) -> &'a U
+    /// where
+    ///     T: 'static + Clone,
+    ///     U: 'static + From<T> + From<u8>,
+    /// {
+    ///     let to = |ty: &mut T| -> &U { b };
+    ///
+    ///     SpecializerBorrowed::new(a, to)
+    ///         .specialize(|int: &mut i32| -> &i32 {
+    ///             *int *= 2;
+    ///             int
+    ///         })
+    ///         .specialize_map_param(
+    ///             |int: &mut u8| {
+    ///                 *int *= 3;
+    ///                 int
+    ///             },
+    ///             to,
+    ///         )
+    ///         .run()
+    /// }
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<u8, i32>(&mut value, &5), &mut 5);
+    /// assert_eq!(value, 9);
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i32, i32>(&mut value, &5), &mut 6);
+    /// assert_eq!(value, 6);
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i16, i32>(&mut value, &5), &mut 5);
+    /// assert_eq!(value, 3);
+    /// ```
     #[inline]
     pub fn specialize_map_param<P>(
         self,
@@ -247,34 +262,57 @@ where
 
     /// Specialize on the parameter and the return type of the closure, mapping
     /// the parameter.
-    /*
-     * ```rust
-     * use specializer::SpecializerBorrowed;
-     *
-     * fn specialized<T, U>(ty: &mut T) -> U
-     * where
-     *     T: 'static + Clone,
-     *     U: 'static + From<T>,
-     * {
-     *     let f = |x: &mut T| (*x).clone().into();
-     *
-     *     SpecializerBorrowed::new(ty, f)
-     *         .specialize_map_return(f, |int: i16| int * 2)
-     *         .specialize_map_param(
-     *             |int: &mut u8| {
-     *                 *int *= 3;
-     *                 int
-     *             },
-     *             f,
-     *         )
-     *         .run()
-     * }
-     *
-     * assert_eq!(specialized::<i16, i32>(&mut 3), 3);
-     * assert_eq!(specialized::<i8, i16>(&mut 3), 6);
-     * assert_eq!(specialized::<u8, i32>(&mut 3), 9);
-     * ```
-     */
+    ///
+    /// ```rust
+    /// use std::convert;
+    ///
+    /// use specializer::SpecializerBorrowed;
+    ///
+    /// fn specialized<'a, U>(a: &'a mut i8, b: &'a i32, c: &'a U) -> &'a U
+    /// where
+    ///     U: 'static,
+    /// {
+    ///     let to = |ty: &mut i8| -> &U {
+    ///         *ty *= 3;
+    ///         c
+    ///     };
+    ///
+    ///     SpecializerBorrowed::new(a, to)
+    ///         .specialize_return(|int| -> &i8 {
+    ///             *int *= 2;
+    ///             int
+    ///         })
+    ///         .specialize_map_return(
+    ///             to,
+    ///             |ty| -> &i32 { b },
+    ///         )
+    ///         .specialize_map_return(
+    ///             |ty| -> &U { c },
+    ///             |ty| -> &i16 { &15 },
+    ///         )
+    ///         .run()
+    /// }
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i8>(&mut value, &5, &42), &6);
+    /// assert_eq!(value, 6);
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i64>(&mut value, &5, &42), &42);
+    /// assert_eq!(value, 9);
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i32>(&mut value, &5, &42), &5);
+    /// assert_eq!(value, 9);
+    ///
+    /// let mut value = 3;
+    ///
+    /// assert_eq!(specialized::<i16>(&mut value, &5, &42), &15);
+    /// assert_eq!(value, 3);
+    /// ```
     #[inline]
     pub fn specialize_map_return<R>(
         self,
