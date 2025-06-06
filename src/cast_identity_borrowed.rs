@@ -1,4 +1,4 @@
-use core::any::TypeId;
+use core::{any::TypeId, pin::Pin, task::Poll};
 
 /// Identity cast on a borrowed type
 ///
@@ -115,18 +115,34 @@ where
     }
 }
 
-impl<'a, T, U> CastIdentityBorrowed<&'a U> for &'a mut T
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a U>> for Pin<&'a T>
 where
-    T: 'static,
-    U: 'static,
+    T: 'static + Unpin,
+    U: 'static + Unpin,
 {
+    fn cast_identity(self) -> Option<Pin<&'a U>> {
+        Some(Pin::new(crate::cast_identity_ref(self.get_ref())?))
+    }
+
+    #[inline(always)]
+    fn is_same() -> bool {
+        TypeId::of::<U>() == TypeId::of::<T>()
+    }
 }
 
-impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for &'a T
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a mut U>> for Pin<&'a mut T>
 where
-    T: 'static,
-    U: 'static,
+    T: 'static + Unpin,
+    U: 'static + Unpin,
 {
+    fn cast_identity(self) -> Option<Pin<&'a mut U>> {
+        Some(Pin::new(crate::cast_identity_mut(self.get_mut())?))
+    }
+
+    #[inline(always)]
+    fn is_same() -> bool {
+        TypeId::of::<U>() == TypeId::of::<T>()
+    }
 }
 
 impl<T, U> CastIdentityBorrowed<Option<U>> for Option<T>
@@ -146,3 +162,124 @@ where
         <T as CastIdentityBorrowed<U>>::is_same()
     }
 }
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for Poll<T>
+where
+    T: CastIdentityBorrowed<U>,
+{
+    fn cast_identity(self) -> Option<Poll<U>> {
+        Some(if let Poll::Ready(inner) = self {
+            Poll::Ready(crate::cast_identity_borrowed(inner)?)
+        } else {
+            Poll::Pending
+        })
+    }
+
+    #[inline(always)]
+    fn is_same() -> bool {
+        <T as CastIdentityBorrowed<U>>::is_same()
+    }
+}
+
+impl<T, U, E, F> CastIdentityBorrowed<Result<U, F>> for Result<T, E>
+where
+    T: CastIdentityBorrowed<U>,
+    E: CastIdentityBorrowed<F>,
+{
+    fn cast_identity(self) -> Option<Result<U, F>> {
+        Some(match self {
+            Ok(inner) => Ok(crate::cast_identity_borrowed(inner)?),
+            Err(inner) => Err(crate::cast_identity_borrowed(inner)?),
+        })
+    }
+
+    #[inline(always)]
+    fn is_same() -> bool {
+        <T as CastIdentityBorrowed<U>>::is_same()
+            && <E as CastIdentityBorrowed<F>>::is_same()
+    }
+}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a U> for &'a mut T {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a U>> for &'a mut T {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a mut U>> for &'a mut T {}
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for &mut T {}
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for &mut T {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for &mut T {}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for &'a T {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a U>> for &'a T {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a mut U>> for &'a T {}
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for &T {}
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for &T {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for &T {}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a U> for Pin<&'a mut T> {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a U>> for Pin<&'a mut T> {}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for Pin<&'a mut T> {}
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for Pin<&mut T> {}
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for Pin<&mut T> {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for Pin<&mut T> {}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a mut U> for Pin<&'a T> {}
+
+impl<'a, T, U> CastIdentityBorrowed<&'a U> for Pin<&'a T> {}
+
+impl<'a, T, U> CastIdentityBorrowed<Pin<&'a mut U>> for Pin<&'a T> {}
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for Pin<&T> {}
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for Pin<&T> {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for Pin<&T> {}
+
+impl<T, U> CastIdentityBorrowed<&mut U> for Option<T> {}
+
+impl<T, U> CastIdentityBorrowed<&U> for Option<T> {}
+
+impl<T, U> CastIdentityBorrowed<Pin<&mut U>> for Option<T> {}
+
+impl<T, U> CastIdentityBorrowed<Pin<&U>> for Option<T> {}
+
+impl<T, U> CastIdentityBorrowed<Poll<U>> for Option<T> {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for Option<T> {}
+
+impl<T, U> CastIdentityBorrowed<&mut U> for Poll<T> {}
+
+impl<T, U> CastIdentityBorrowed<&U> for Poll<T> {}
+
+impl<T, U> CastIdentityBorrowed<Pin<&mut U>> for Poll<T> {}
+
+impl<T, U> CastIdentityBorrowed<Pin<&U>> for Poll<T> {}
+
+impl<T, U> CastIdentityBorrowed<Option<U>> for Poll<T> {}
+
+impl<T, U, F> CastIdentityBorrowed<Result<U, F>> for Poll<T> {}
+
+impl<T, U, E> CastIdentityBorrowed<&mut U> for Result<T, E> {}
+
+impl<T, U, E> CastIdentityBorrowed<&U> for Result<T, E> {}
+
+impl<T, U, E> CastIdentityBorrowed<Pin<&mut U>> for Result<T, E> {}
+
+impl<T, U, E> CastIdentityBorrowed<Pin<&U>> for Result<T, E> {}
+
+impl<T, U, E> CastIdentityBorrowed<Option<U>> for Result<T, E> {}
+
+impl<T, U, E> CastIdentityBorrowed<Poll<U>> for Result<T, E> {}
