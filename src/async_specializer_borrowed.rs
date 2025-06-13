@@ -2,7 +2,7 @@ use core::{future, marker::PhantomData};
 
 use crate::CastIdentityBorrowed;
 
-/// Specialized behavior runner (Borrowed -> Borrowed)
+/// Async specialized behavior runner (Borrowed -> Borrowed)
 #[derive(Debug)]
 pub struct AsyncSpecializerBorrowed<T, U, F>(T, F, PhantomData<fn(T) -> U>);
 

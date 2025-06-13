@@ -19,11 +19,11 @@
 //! | Async | Takes    | Returns  | Type                               |
 //! |-------|----------|----------|------------------------------------|
 //! | False | Owned    | Owned    | [`Specializer`]                    |
-//! | False | Owned    | Borrowed | `SpecializerBorrowedReturn`        |
+//! | False | Owned    | Borrowed | [`SpecializerBorrowedReturn`]      |
 //! | False | Borrowed | Owned    | [`SpecializerBorrowedParam`]       |
 //! | False | Borrowed | Borrowed | [`SpecializerBorrowed`]            |
 //! | True  | Owned    | Owned    | [`AsyncSpecializer`]               |
-//! | True  | Owned    | Borrowed | `AsyncSpecializerBorrowedReturn`   |
+//! | True  | Owned    | Borrowed | [`AsyncSpecializerBorrowedReturn`] |
 //! | True  | Borrowed | Owned    | [`AsyncSpecializerBorrowedParam`]  |
 //! | True  | Borrowed | Borrowed | [`AsyncSpecializerBorrowed`]       |
 //!
@@ -72,10 +72,12 @@ mod api;
 mod async_specializer;
 mod async_specializer_borrowed;
 mod async_specializer_borrowed_param;
+mod async_specializer_borrowed_return;
 mod cast_identity_borrowed;
 mod specializer;
 mod specializer_borrowed;
 mod specializer_borrowed_param;
+mod specializer_borrowed_return;
 
 pub use self::{
     api::{
@@ -85,8 +87,10 @@ pub use self::{
     async_specializer::AsyncSpecializer,
     async_specializer_borrowed::AsyncSpecializerBorrowed,
     async_specializer_borrowed_param::AsyncSpecializerBorrowedParam,
+    async_specializer_borrowed_return::AsyncSpecializerBorrowedReturn,
     cast_identity_borrowed::CastIdentityBorrowed,
     specializer::Specializer,
     specializer_borrowed::SpecializerBorrowed,
     specializer_borrowed_param::SpecializerBorrowedParam,
+    specializer_borrowed_return::SpecializerBorrowedReturn,
 };
