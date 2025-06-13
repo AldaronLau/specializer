@@ -1,6 +1,6 @@
 [package]
 name = "specializer"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 description = """
 Limited safe specialization on stable Rust with builder-like pattern

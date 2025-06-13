@@ -10,7 +10,7 @@ checksum = "efcd36303871fb977a47dabc9af736c75c492bb32a92fa26262b2741531e97ce"
 
 [[package]]
 name = "specializer"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "pasts",
 ]
