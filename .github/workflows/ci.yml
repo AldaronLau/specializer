@@ -1,71 +1,84 @@
-on: [push, pull_request]
-
 name: tests
-
+on:
+  push:
+    branches:
+      - 'v[0-9]+'
+      - 'v[0-9]+.[0-9]+'
+  pull_request:
+defaults:
+  run:
+    shell: bash
+    working-directory: .
+env:
+  RUSTUP_AUTO_INSTALL: 0
+  cargo_hack_flags: >
+    --all-features
 jobs:
   checks:
+    name: "Checks"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        tc: [1.85.0, stable, beta, nightly]
+        tc: ["1.85", "stable", "beta", "nightly"]
+        include:
+        - tc: stable
+        - tc: beta
+        - tc: nightly
+        - os: ubuntu-latest
+          cc: "-t \
+            aarch64-linux-android,\
+            i686-pc-windows-gnu,\
+            i686-unknown-linux-gnu,\
+            x86_64-unknown-illumos,\
+            i686-unknown-freebsd,\
+            x86_64-unknown-redox"
+        - os: macos-latest
+          cc: "-t \
+            aarch64-apple-ios,\
+            x86_64-apple-darwin,\
+            wasm32-wasip1,\
+            wasm32-wasip2,\
+            wasm32-unknown-unknown"
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.tc }}
-        components: rustfmt, clippy
-        override: true
-    - run: cargo fmt --check
-    - run: cargo clippy -- -D warnings
-    - run: cargo clippy --all-features -- -D warnings
-    - run: cargo doc
-    - run: cargo test --all --all-features
-  checks-cross-compile:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        tc: [1.85.0, stable, beta, nightly]
-        cc:
-        - aarch64-linux-android
-        - i686-pc-windows-gnu
-        - i686-unknown-freebsd
-        - i686-unknown-linux-gnu
-        - wasm32-wasip1
-        - wasm32-unknown-unknown
-        - x86_64-apple-darwin
-        - x86_64-unknown-redox
-        - x86_64-unknown-illumos
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.tc }}
-        target: ${{ matrix.cc }}
-        components: clippy
-        override: true
-    - run: cargo clippy --target=${{ matrix.cc }} -- -D warnings
-    - run: cargo clippy --all-features --target=${{ matrix.cc }} -- -D warnings
-    - run: cargo build --all-features --target=${{ matrix.cc }}
-  checks-cross-compile-ios:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [macos-latest]
-        tc: [1.85.0, stable, beta, nightly]
-        cc: [aarch64-apple-ios]
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.tc }}
-        target: ${{ matrix.cc }}
-        components: clippy
-        override: true
-    - run: cargo clippy --target=${{ matrix.cc }} -- -D warnings
-    - run: cargo clippy --all-features --target=${{ matrix.cc }} -- -D warnings
-    - run: cargo build --all-features --target=${{ matrix.cc }}
+      - uses: taiki-e/checkout-action@v1
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-hack
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-${{ matrix.tc }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install Rust
+        run: |
+          rustup toolchain install ${{ matrix.tc }} \
+            --profile minimal \
+            -c clippy,rustfmt \
+            ${{ matrix.cc }} \
+            --no-self-update
+          rustup override set ${{ matrix.tc }}
+      - name: Check code formatting
+        run: cargo fmt --check
+      - name: Checking clippy for warnings
+        run: |
+          cargo hack build --workspace --all-targets $cargo_hack_flags
+          cargo hack clippy --workspace --all-targets $cargo_hack_flags -- \
+            -D warnings
+      - if: ${{ matrix.cc }}
+        name: Checking cross-compilation works
+        run: |
+          for target in $(echo ${{ matrix.cc }} | sed 's/-t //g' | sed 's/,/ /g')
+          do
+            cargo hack build --workspace "--target=$target" $cargo_hack_flags
+            cargo hack clippy --workspace "--target=$target" $cargo_hack_flags \
+              -- -D warnings
+          done
+      - name: Check doc generation succeeds
+        run: cargo doc --all-features --no-deps
+      - name: Running tests
+        run: cargo hack test --workspace $cargo_hack_flags
