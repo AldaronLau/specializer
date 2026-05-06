@@ -22,7 +22,7 @@ where
     T: 'static,
     U: 'static,
 {
-    <(dyn Any + 'static)>::downcast_mut::<Option<U>>(&mut Some(ty))?.take()
+    <dyn Any + 'static>::downcast_mut::<Option<U>>(&mut Some(ty))?.take()
 }
 
 /// Attempt to cast `&T` to `&U`.
@@ -48,7 +48,7 @@ where
     T: 'static,
     U: 'static,
 {
-    <(dyn Any + 'static)>::downcast_ref::<U>(ty)
+    <dyn Any + 'static>::downcast_ref::<U>(ty)
 }
 
 /// Attempt to cast `&mut T` to `&mut U`.
@@ -74,7 +74,7 @@ where
     T: 'static,
     U: 'static,
 {
-    <(dyn Any + 'static)>::downcast_mut::<U>(ty)
+    <dyn Any + 'static>::downcast_mut::<U>(ty)
 }
 
 /// Attempt to cast borrowed `T` to `U`.
